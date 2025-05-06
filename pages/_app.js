@@ -1,5 +1,11 @@
-import "@/styles/globals.css";
+import { WagmiConfig } from "wagmi";
+import config from "../lib/wagmi";
+import "../styles/globals.css";
 
 export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />;
+  return (
+    <WagmiConfig config={config}>
+      <Component {...pageProps} />
+    </WagmiConfig>
+  );
 }
