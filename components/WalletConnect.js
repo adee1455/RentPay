@@ -5,16 +5,19 @@ export default function WalletConnect({ onConnect }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMetaMask = async () => {
+    if (isLoading) return; // Prevent multiple connection attempts
     setIsLoading(true);
     try {
       await onConnect();
     } catch (error) {
       console.error("Failed to connect:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleWalletConnect = async () => {
+    if (isLoading) return; // Prevent multiple connection attempts
     setIsLoading(true);
     try {
       const connector = new WalletConnectConnector({
@@ -25,8 +28,9 @@ export default function WalletConnect({ onConnect }) {
       await onConnect({ connector });
     } catch (error) {
       console.error("Failed to connect:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

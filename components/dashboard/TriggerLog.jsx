@@ -1,22 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EventModal from './EventModal';
-import { ethers } from 'ethers';
 
 export default function TriggerLog({ events, onEventClick }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
-
-  // Format amount from wei to USDT
-  const formatAmount = (amount) => {
-    try {
-      // Sanitize and convert input
-      const clean = amount.toString().split('.')[0]; // Remove any decimals
-      return ethers.formatUnits(clean, 18);
-    } catch (error) {
-      console.error('Error formatting amount:', error);
-      return '0.00';
-    }
-  };
 
   return (
     <motion.div
@@ -56,8 +43,9 @@ export default function TriggerLog({ events, onEventClick }) {
                     Tenant: {event.tenant.slice(0, 6)}...{event.tenant.slice(-4)}
                   </p>
                   <p className="text-xs text-gray-400">
-                    Amount: {formatAmount(event.amount)} 
+                    Amount: {event.amount}
                   </p>
+                  
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400">
@@ -79,4 +67,4 @@ export default function TriggerLog({ events, onEventClick }) {
       />
     </motion.div>
   );
-} 
+}

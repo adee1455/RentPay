@@ -21,7 +21,7 @@ export default function OverviewPanel({ stats }) {
           </div>
         </div>
         <div className="mt-4">
-          <p className="text-gray-400 text-sm">≈ ${stats.totalRentFiat}</p>
+          <p className="text-gray-400 text-sm">≈ ₹{stats.totalRentFiat}</p>
         </div>
       </motion.div>
 

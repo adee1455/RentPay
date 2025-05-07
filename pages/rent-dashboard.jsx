@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ethers } from "ethers";
 import Sidebar from "@/components/dashboard/Sidebar";
 import OverviewPanel from "@/components/dashboard/OverviewPanel";
 import Filters from "@/components/dashboard/Filters";
@@ -9,11 +8,13 @@ import TriggerLog from "@/components/dashboard/TriggerLog";
 import ConnectWallet from "@/components/dashboard/ConnectWallet";
 import { getUSDTToINRRate, convertToINR } from "@/utils/currency";
 
+const USDT_ADDRESS = '0x986a2CdeBF0d11572e85540d9e29F0567c2a23ed';
+const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+
 export default function PayoutDashboard() {
   const [payouts, setPayouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [inrRate, setInrRate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filters, setFilters] = useState({
@@ -48,8 +49,13 @@ export default function PayoutDashboard() {
 
   useEffect(() => {
     async function fetchRate() {
-      const rate = await getUSDTToINRRate();
-      setInrRate(rate);
+      try {
+        const rate = await getUSDTToINRRate();
+        setInrRate(rate);
+      } catch (err) {
+        console.error("Failed to fetch INR rate:", err);
+        // Don't set error state here as it's not critical
+      }
     }
     fetchRate();
     const rateInterval = setInterval(fetchRate, 60000); // Update rate every minute
@@ -58,34 +64,20 @@ export default function PayoutDashboard() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    // Implement filtering logic here
   };
 
-  const handleConnectWallet = () => {
-    setIsConnected(!isConnected);
-    // Implement wallet connection logic here
-  };
+ 
 
   const handleEventClick = (event) => {
     setSelectedEvent(event);
   };
 
-  // Format amount from wei to USDT
-  const formatAmount = (amount) => {
-    try {
-      // Sanitize and convert input
-      const clean = amount.toString().split('.')[0]; // Remove any decimals
-      return ethers.formatUnits(clean, 18);
-    } catch (error) {
-      console.error('Error formatting amount:', error);
-      return '0.00';
-    }
-  };
-  
 
-  // Calculate stats from real data
+  // Calculate stats from filtered data
   const calculateStats = () => {
-    if (!payouts.length) return {
+    const filteredPayouts = filterPayouts(payouts, filters);
+    
+    if (!filteredPayouts.length) return {
       totalRent: "0.00",
       totalRentFiat: "0.00",
       walletBalance: "0.00",
@@ -94,8 +86,8 @@ export default function PayoutDashboard() {
       lastUpdated: new Date().toLocaleTimeString()
     };
 
-    const totalRent = payouts.reduce((sum, payout) => {
-      const amount = formatAmount(payout.amount);
+    const totalRent = filteredPayouts.reduce((sum, payout) => {
+      const amount = payout.amount;
       return sum + parseFloat(amount);
     }, 0);
     
@@ -111,17 +103,41 @@ export default function PayoutDashboard() {
     };
   };
 
-  // Format chart data from real payouts
+  // Filter payouts based on selected filters
+  const filterPayouts = (payouts, filters) => {
+    return payouts.filter(payout => {
+      const date = new Date(payout.timestamp);
+      const now = new Date();
+      
+      // Date range filter
+      if (filters.dateRange !== 'all') {
+        const days = parseInt(filters.dateRange);
+        const cutoff = new Date(now.setDate(now.getDate() - days));
+        if (date < cutoff) return false;
+      }
+      
+      // Stablecoin filter
+      if (filters.stablecoin !== 'all' && payout.stablecoin !== filters.stablecoin) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // Format chart data from filtered payouts
   const formatChartData = () => {
-    if (!payouts.length) return {
+    const filteredPayouts = filterPayouts(payouts, filters);
+    
+    if (!filteredPayouts.length) return {
       labels: [],
       values: []
     };
 
     // Group payouts by date
-    const groupedPayouts = payouts.reduce((acc, payout) => {
+    const groupedPayouts = filteredPayouts.reduce((acc, payout) => {
       const date = new Date(payout.timestamp).toLocaleDateString();
-      const amount = formatAmount(payout.amount);
+      const amount = payout.amount;
       acc[date] = (acc[date] || 0) + parseFloat(amount);
       return acc;
     }, {});
@@ -133,11 +149,11 @@ export default function PayoutDashboard() {
   };
 
   // Format payouts for display
-  const formattedPayouts = payouts.map(payout => ({
+  const formattedPayouts = filterPayouts(payouts, filters).map(payout => ({
     ...payout,
-    formattedAmount: formatAmount(payout.amount)
+    formattedAmount: payout.amount // use directly if already formatted from backend
   }));
-
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
@@ -175,7 +191,7 @@ export default function PayoutDashboard() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-teal-400 to-purple-400 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <ConnectWallet isConnected={isConnected} onConnect={handleConnectWallet} />
+          {/* <ConnectWallet isConnected={isConnected} onConnect={handleConnectWallet} /> */}
         </div>
 
         <OverviewPanel stats={calculateStats()} />
@@ -188,8 +204,10 @@ export default function PayoutDashboard() {
           
           <div>
             <TriggerLog 
+              inrRate={inrRate}
               events={formattedPayouts} 
               onEventClick={handleEventClick}
+              selectedEvent={selectedEvent}
             />
           </div>
         </div>
