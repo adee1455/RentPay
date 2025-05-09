@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { formatUnits } from 'ethers';
 
 // Fetch live USDT to INR rate from an API
 export async function getUSDTToINRRate() {
@@ -26,7 +26,7 @@ export function formatAmount(amount) {
     }
     
     // Convert BigNumber to readable format
-    return ethers.formatUnits(amount, 18);
+    return formatUnits(amount, 18);
   } catch (error) {
     console.error('Error formatting amount:', error);
     return '0.00';
