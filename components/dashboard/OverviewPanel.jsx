@@ -7,7 +7,7 @@ export default function OverviewPanel({ stats }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-lg border border-gray-700/50"
+        className="bg-black/30 border-white/10 rounded-xl p-6 hover:bg-black/40 transition-colors 0  shadow-lg border "
       >
         <div className="flex items-center justify-between">
           <div>
@@ -21,7 +21,7 @@ export default function OverviewPanel({ stats }) {
           </div>
         </div>
         <div className="mt-4">
-          <p className="text-gray-400 text-sm">≈ ${stats.totalRentFiat}</p>
+          <p className="text-gray-400 text-sm">≈ ₹{stats.totalRentFiat}</p>
         </div>
       </motion.div>
 
@@ -29,7 +29,7 @@ export default function OverviewPanel({ stats }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-lg border border-gray-700/50"
+        className="bg-black/30 border-white/10 rounded-xl p-6 hover:bg-black/40 transition-colors 0  shadow-lg border "
       >
         <div className="flex items-center justify-between">
           <div>
@@ -51,7 +51,7 @@ export default function OverviewPanel({ stats }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-lg border border-gray-700/50"
+        className="bg-black/30 border-white/10 rounded-xl p-6 hover:bg-black/40 transition-colors 0  shadow-lg border "
       >
         <div className="flex items-center justify-between">
           <div>
