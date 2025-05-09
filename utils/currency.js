@@ -1,4 +1,3 @@
-import { formatUnits } from 'ethers/utils';
 import { ethers } from 'ethers';
 
 // Fetch live USDT to INR rate from an API
