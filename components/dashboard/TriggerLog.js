@@ -31,7 +31,7 @@ export default function TriggerLog({ inrRate,events, onEventClick, selectedEvent
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className="bg-black/30 border-white/10  hover:bg-black/40 transition-colors 0  shadow-lg border  rounded-lg p-4">
       <h2 className="text-xl font-semibold text-gray-100 mb-4">Transaction Log</h2>
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         {events.map((event, index) => (
@@ -44,7 +44,7 @@ export default function TriggerLog({ inrRate,events, onEventClick, selectedEvent
             className={`p-4 rounded-lg border cursor-pointer transition-all ${
               selectedEvent?.txHash === event.txHash
                 ? 'bg-blue-500/20 border-blue-500'
-                : 'bg-gray-700/50 border-gray-600 hover:border-blue-500'
+                : 'bg-gray-900/50 border-gray-600 hover:border-blue-500'
             }`}
           >
             <div className="flex justify-between items-start">

@@ -18,7 +18,7 @@ export default function Filters({ onFilterChange }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg border border-gray-700/50 mb-6"
+      className="bg-black/30 border-white/10 rounded-xl p-6 hover:bg-black/40 transition-colors 0  shadow-lg border "
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -28,7 +28,7 @@ export default function Filters({ onFilterChange }) {
           <select
             value={filters.dateRange}
             onChange={(e) => handleChange('dateRange', e.target.value)}
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -44,7 +44,7 @@ export default function Filters({ onFilterChange }) {
           <select
             value={filters.stablecoin}
             onChange={(e) => handleChange('stablecoin', e.target.value)}
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All</option>
             <option value="usdt">USDT</option>
@@ -59,7 +59,7 @@ export default function Filters({ onFilterChange }) {
           <select
             value={filters.status}
             onChange={(e) => handleChange('status', e.target.value)}
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All</option>
             <option value="success">Success</option>

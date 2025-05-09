@@ -94,7 +94,7 @@ export default function RentChart({ data }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-lg border border-gray-700/50 mb-6"
+      className="bg-black/30 border-white/10 rounded-xl p-6 hover:bg-black/40 transition-colors 0  shadow-lg border mb-6"
     >
       <h3 className="text-lg font-semibold text-gray-200 mb-4">Rent Payment Trends</h3>
       <div className="h-80">

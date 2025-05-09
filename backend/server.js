@@ -136,7 +136,7 @@ async function processRentPaidEvent(event) {
     
     console.log('Processed payout:', payout);
     
-    // Add to beginning of array
+    // Add to beginning of array 
     simulatedPayouts.unshift(payout);
     
     // Keep only last 100 payouts
