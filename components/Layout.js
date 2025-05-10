@@ -27,7 +27,7 @@ const Layout = ({ children }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => router.push('/')}
-          className="fixed top-24 left-4 z-50 flex items-center space-x-2 px-4 py-2 bg-black/50 border border-white/10 rounded-lg hover:bg-white/5 transition-colors backdrop-blur-lg"
+          className="hidden md:flex fixed top-24 left-4 z-50 items-center space-x-2 px-4 py-2 bg-black/50 border border-white/10 rounded-lg hover:bg-white/5 transition-colors backdrop-blur-lg"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

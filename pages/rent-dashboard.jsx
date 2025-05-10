@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "@/components/dashboard/Sidebar";
 import OverviewPanel from "@/components/dashboard/OverviewPanel";
 import Filters from "@/components/dashboard/Filters";
@@ -20,6 +20,7 @@ export default function PayoutDashboard() {
   const [inrRate, setInrRate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [landlordUPI, setLandlordUPI] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
 
   const [filters, setFilters] = useState({
@@ -214,28 +215,76 @@ export default function PayoutDashboard() {
   return (
     <Layout>
       <div className="flex min-h-[calc(100vh-4rem)]">
-        {/* Sidebar */}
-        <div className="w-64 bg-black/50 border-r border-white/10 backdrop-blur-lg">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block w-64 bg-black/50 border-r border-white/10 backdrop-blur-lg">
           <Sidebar />
         </div>
 
+        {/* Mobile Sidebar Overlay */}
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSidebarOpen(false)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+              />
+              
+              {/* Sidebar */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 20 }}
+                className="fixed top-0 left-0 h-full w-64 bg-black/90 border-r border-white/10 backdrop-blur-lg z-50 lg:hidden"
+              >
+                <div className="p-4">
+                  <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <Sidebar />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto pb-16">
+        <div className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
-            <header className="mb-8 flex justify-between items-center">
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                  RentPay Dashboard
-                </h1>
-                <p className="text-gray-400 mt-2">Track your rent payments and payouts</p>
-              </div>
+            <header className="mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
               <div className="flex items-center space-x-4">
-                <span className="text-gray-400">UPI: {landlordUPI}</span>
+                {/* Hamburger Menu Button */}
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                    RentPay Dashboard
+                  </h1>
+                  <p className="text-gray-400 mt-2">Track your rent payments and payouts</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 w-full lg:w-auto">
+                <span className="text-gray-400 text-sm lg:text-base truncate">UPI: {landlordUPI}</span>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors whitespace-nowrap"
                 >
                   Logout
                 </motion.button>
@@ -244,31 +293,31 @@ export default function PayoutDashboard() {
 
             {/* Overview Panel */}
             <div className="mb-8">
-              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl">
+              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-4 lg:p-6 shadow-xl">
                 <OverviewPanel stats={calculateStats()} />
               </div>
             </div>
 
             {/* Filters */}
             <div className="mb-8">
-              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl">
+              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-4 lg:p-6 shadow-xl">
                 <Filters filters={filters} onFilterChange={handleFilterChange} />
               </div>
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
               {/* Chart */}
-              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl">
-                <h2 className="text-2xl font-semibold text-gray-100 mb-4">Payment History</h2>
+              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-4 lg:p-6 shadow-xl">
+                <h2 className="text-xl lg:text-2xl font-semibold text-gray-100 mb-4">Payment History</h2>
                 <div className="bg-black/30 rounded-xl p-4">
                   <RentChart data={formatChartData()} />
                 </div>
               </div>
 
               {/* Trigger Log */}
-              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-6 shadow-xl">
-                <h2 className="text-2xl font-semibold text-gray-100 mb-4">Recent Transactions</h2>
+              <div className="backdrop-blur-lg bg-black/50 border border-white/10 rounded-2xl p-4 lg:p-6 shadow-xl">
+                <h2 className="text-xl lg:text-2xl font-semibold text-gray-100 mb-4">Recent Transactions</h2>
                 <div className="bg-black/30 rounded-xl p-4">
                   <TriggerLog 
                     inrRate={inrRate}
