@@ -1,4 +1,4 @@
-import { formatUnits } from 'ethers/utils';
+import { formatUnits } from 'ethers';
 
 // Fetch live USDT to INR rate from an API
 export async function getUSDTToINRRate() {
