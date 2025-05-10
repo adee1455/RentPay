@@ -98,11 +98,89 @@ const USDT_ABI = [
   }
 ];
 
-// Add token decimals mapping
-const TOKEN_DECIMALS = {
-  [USDT_ADDRESS]: 18, // Your testnet USDT uses 18 decimals
-  [USDC_ADDRESS]: 6,  // USDC typically uses 6 decimals
-};
+// Add ERC20 ABI
+const ERC20_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "approve",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -120,6 +198,7 @@ export default function Home() {
   const [allowance, setAllowance] = useState(null);
   const [isCheckingAllowance, setIsCheckingAllowance] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [tokenDecimals, setTokenDecimals] = useState(null);
   
   const { address, isConnected } = useAccount();
   const { connect } = useConnect({
@@ -175,7 +254,7 @@ export default function Home() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await fetch("http://localhost:3001/payouts");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/payouts`)
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         
@@ -304,7 +383,8 @@ export default function Home() {
     setIsCheckingAllowance(true);
     try {
       const signer = provider.getSigner();
-      const token = new ethers.Contract(tokenAddress, USDT_ABI, signer);
+      // Use USDT_ABI for USDT and ERC20_ABI for USDC
+      const token = new ethers.Contract(tokenAddress, tokenAddress === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, signer);
       const contract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RentPayABI, signer);
       
       // Get token decimals dynamically
@@ -339,6 +419,20 @@ export default function Home() {
     }
   };
 
+  const getTokenDecimals = async (tokenAddress) => {
+    if (!provider || !tokenAddress) return;
+    try {
+      // Use USDT_ABI for USDT and ERC20_ABI for USDC
+      const token = new ethers.Contract(tokenAddress, tokenAddress === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, provider);
+      const decimals = await token.decimals();
+      setTokenDecimals(decimals);
+      return decimals;
+    } catch (error) {
+      console.error('Error getting token decimals:', error);
+      return null;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -358,6 +452,11 @@ export default function Home() {
         ...prev,
         [name]: value,
       };
+      
+      // Get token decimals and check allowance when token changes
+      if (name === 'stablecoin' && newFormData.stablecoin) {
+        getTokenDecimals(newFormData.stablecoin);
+      }
       
       // Check allowance when amount or token changes
       if ((name === 'amount' || name === 'stablecoin') && newFormData.amount && newFormData.stablecoin) {
@@ -382,7 +481,8 @@ export default function Home() {
     try {
       const signer = provider.getSigner();
       const contract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RentPayABI, signer);
-      const token = new ethers.Contract(formData.stablecoin, USDT_ABI, signer);
+      // Use USDT_ABI for USDT and ERC20_ABI for USDC
+      const token = new ethers.Contract(formData.stablecoin, formData.stablecoin === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, signer);
 
       // Get token decimals dynamically
       const decimals = await token.decimals();
@@ -560,9 +660,9 @@ export default function Home() {
                             <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                             <span>Checking allowance...</span>
                           </div>
-                        ) : allowance && (
+                        ) : allowance && tokenDecimals && (
                           <div>
-                            Current allowance: {ethers.utils.formatUnits(allowance, TOKEN_DECIMALS[formData.stablecoin])} {formData.stablecoin === USDT_ADDRESS ? 'USDT' : 'USDC'}
+                            Current allowance: {ethers.utils.formatUnits(allowance, tokenDecimals)} {formData.stablecoin === USDT_ADDRESS ? 'USDT' : 'USDC'}
                           </div>
                         )}
                       </div>
