@@ -7,12 +7,14 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*' })); // for dev only; restrict in prod
+
 
 const PORT = 3001;
 
