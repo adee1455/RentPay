@@ -41,6 +41,8 @@ const rentPayContract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RENTPAY_AB
 
 // Store simulated payouts in memory
 let simulatedPayouts = [];
+let lastCheckedBlock = null;
+let pollingInterval = null;
 
 // Verify contract connection
 async function verifyContract() {
@@ -59,35 +61,74 @@ async function verifyContract() {
   }
 }
 
+// Fetch historical events
+async function fetchHistoricalEvents() {
+  try {
+    console.log('Fetching historical RentPaid events...');
+    
+    // Get the contract creation block or a reasonable starting point
+    const startBlock = lastCheckedBlock - 10000; // Look back 10000 blocks
+    const endBlock = lastCheckedBlock;
+    
+    console.log(`Fetching events from block ${startBlock} to ${endBlock}`);
+    
+    const events = await rentPayContract.queryFilter(
+      rentPayContract.filters.RentPaid(),
+      startBlock,
+      endBlock
+    );
+    
+    console.log(`Found ${events.length} historical events`);
+    
+    // Process events in reverse chronological order
+    for (const event of events.reverse()) {
+      await processRentPaidEvent(event);
+    }
+    
+    console.log('Historical events processing complete');
+  } catch (error) {
+    console.error('Error fetching historical events:', error);
+  }
+}
+
 // Set up event listener
 async function setupEventListener() {
   try {
     console.log('Setting up RentPaid event listener...');
     
     // Get the latest block number
-    const latestBlock = await provider.getBlockNumber();
-    console.log('Latest block number:', latestBlock);
+    lastCheckedBlock = await provider.getBlockNumber();
+    console.log('Latest block number:', lastCheckedBlock);
     
-    // Listen for past events from the last 1000 blocks
-    const pastEvents = await rentPayContract.queryFilter(
-      rentPayContract.filters.RentPaid(),
-      latestBlock - 1000,
-      latestBlock
-    );
+    // Fetch historical events first
+    await fetchHistoricalEvents();
     
-    console.log('Found past events:', pastEvents.length);
-    
-    // Process past events
-    for (const event of pastEvents) {
-      await processRentPaidEvent(event);
+    // Start polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
     }
     
-    // Listen for new events
-    rentPayContract.on(rentPayContract.filters.RentPaid(), async (event) => {
-      console.log('New RentPaid event received');
-      await processRentPaidEvent(event);
-    });
-
+    pollingInterval = setInterval(async () => {
+      try {
+        const latestBlock = await provider.getBlockNumber();
+        if (latestBlock > lastCheckedBlock) {
+          console.log(`Checking blocks ${lastCheckedBlock + 1} to ${latestBlock}`);
+          const events = await rentPayContract.queryFilter(
+            rentPayContract.filters.RentPaid(),
+            lastCheckedBlock + 1,
+            latestBlock
+          );
+          console.log(`Found ${events.length} new events`);
+          for (const event of events) {
+            await processRentPaidEvent(event);
+          }
+          lastCheckedBlock = latestBlock;
+        }
+      } catch (error) {
+        console.error('Error while polling for events:', error);
+      }
+    }, 15000); // Increased to 15 seconds to avoid rate limiting
+    
     console.log('Event listener setup complete');
   } catch (error) {
     console.error('Error setting up event listener:', error);
@@ -147,28 +188,6 @@ async function processRentPaidEvent(event) {
     console.error('Error processing RentPaid event:', error);
   }
 }
-
-let lastCheckedBlock = await provider.getBlockNumber();
-
-setInterval(async () => {
-  try {
-    const latestBlock = await provider.getBlockNumber();
-    if (latestBlock > lastCheckedBlock) {
-      const events = await rentPayContract.queryFilter(
-        rentPayContract.filters.RentPaid(),
-        lastCheckedBlock + 1,
-        latestBlock
-      );
-      for (const event of events) {
-        await processRentPaidEvent(event);
-      }
-      lastCheckedBlock = latestBlock;
-    }
-  } catch (error) {
-    console.error('Error while polling for events:', error);
-  }
-}, 5000); // Poll every 30 seconds
-
 
 // API endpoint to get simulated payouts
 app.get('/payouts', (req, res) => {
