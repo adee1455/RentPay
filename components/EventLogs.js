@@ -42,7 +42,7 @@ export default function EventLogs() {
   };
 
   const openExplorer = (txHash) => {
-    window.open(`https://sepolia.basescan.org/tx/${txHash}`, '_blank');
+    window.open(`https://basescan.org/tx/${txHash}`, '_blank');
   };
 
   if (loading) {
