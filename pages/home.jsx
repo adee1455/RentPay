@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import RentPayABI from '@/backend/RentPayABI.json';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import EventLogs from '@/components/EventLogs';
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
@@ -10,93 +10,10 @@ import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
 import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
 
-const RENTPAY_CONTRACT_ADDRESS = '0xa89273fa3e346007582eff89db7fa41c80c3abb7';
-const USDT_ADDRESS = '0x986a2CdeBF0d11572e85540d9e29F0567c2a23ed';
-const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+const RENTPAY_CONTRACT_ADDRESS = '0xdd2dbee415c911f7a45a8be3f7bdc1d23a05b0f3';
+const USDT_ADDRESS = '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2';
+const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
-// Add USDT ABI
-const USDT_ABI = [
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "spender",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "approve",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "spender",
-        "type": "address"
-      }
-    ],
-    "name": "allowance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "balanceOf",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
 
 // Add ERC20 ABI
 const ERC20_ABI = [
@@ -199,6 +116,9 @@ export default function Home() {
   const [isCheckingAllowance, setIsCheckingAllowance] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [tokenDecimals, setTokenDecimals] = useState(null);
+  const [approvalAmount, setApprovalAmount] = useState('1000'); // Default approval amount
+  const [isPaying, setIsPaying] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   const { address, isConnected } = useAccount();
   const { connect } = useConnect({
@@ -318,13 +238,13 @@ export default function Home() {
           throw new Error('Unsupported wallet type');
       }
 
-      // Check if we're on Base Sepolia
+      // Check if we're on Base 
       const network = await newProvider.getNetwork();
-      if (network.chainId !== 84532) {
+      if (network.chainId !== 8453) {
         try {
           await newProvider.provider.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x14a34' }], // 84532 in hex
+            params: [{ chainId: '0x2105' }], // 84532 in hex
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
@@ -332,22 +252,22 @@ export default function Home() {
               await newProvider.provider.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
-                  chainId: '0x14a34',
-                  chainName: 'Base Sepolia',
+                  chainId: '0x2105',
+                  chainName: 'Base Mainnet',
                   nativeCurrency: {
                     name: 'ETH',
                     symbol: 'ETH',
                     decimals: 18
                   },
-                  rpcUrls: ['https://sepolia.base.org'],
-                  blockExplorerUrls: ['https://sepolia.basescan.org']
+                  rpcUrls: ['https://base-mainnet.infura.io'],
+                  blockExplorerUrls: ['https://basescan.org']
                 }]
               });
             } catch (addError) {
-              throw new Error('Failed to add Base Sepolia network. Please add it manually in your wallet.');
+              throw new Error('Failed to add Base network. Please add it manually in your wallet.');
             }
           } else {
-            throw new Error('Failed to switch to Base Sepolia network. Please switch manually in your wallet.');
+            throw new Error('Failed to switch to Base network. Please switch manually in your wallet.');
           }
         }
       }
@@ -383,8 +303,8 @@ export default function Home() {
     setIsCheckingAllowance(true);
     try {
       const signer = provider.getSigner();
-      // Use USDT_ABI for USDT and ERC20_ABI for USDC
-      const token = new ethers.Contract(tokenAddress, tokenAddress === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, signer);
+      // Use ERC20_ABI for both USDT and USDC
+      const token = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
       const contract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RentPayABI, signer);
       
       // Get token decimals dynamically
@@ -402,7 +322,7 @@ export default function Home() {
       }
       
       // Check allowance
-      const currentAllowance = await token.allowance(wallet, appWallet);
+      const currentAllowance = await token.allowance(wallet, RENTPAY_CONTRACT_ADDRESS);
       setAllowance(currentAllowance);
       
       return currentAllowance.gte(amountInUnits);
@@ -422,8 +342,8 @@ export default function Home() {
   const getTokenDecimals = async (tokenAddress) => {
     if (!provider || !tokenAddress) return;
     try {
-      // Use USDT_ABI for USDT and ERC20_ABI for USDC
-      const token = new ethers.Contract(tokenAddress, tokenAddress === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, provider);
+      // Use ERC20_ABI for both USDT and USDC
+      const token = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
       const decimals = await token.decimals();
       setTokenDecimals(decimals);
       return decimals;
@@ -467,38 +387,86 @@ export default function Home() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    
+  const handleApproveMax = async () => {
     if (!provider) {
       setError('Please connect your wallet first');
       return;
     }
 
-    setStatus('Processing...');
+    if (!formData.stablecoin) {
+      setError('Please select a token (USDT or USDC) first');
+      return;
+    }
 
+    setStatus('Processing approval...');
     try {
       const signer = provider.getSigner();
+      const token = new ethers.Contract(formData.stablecoin, ERC20_ABI, signer);
       const contract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RentPayABI, signer);
-      // Use USDT_ABI for USDT and ERC20_ABI for USDC
-      const token = new ethers.Contract(formData.stablecoin, formData.stablecoin === USDT_ADDRESS ? USDT_ABI : ERC20_ABI, signer);
+      const appWallet = await contract.appWallet();
 
       // Get token decimals dynamically
       const decimals = await token.decimals();
-      const amountInUnits = ethers.utils.parseUnits(formData.amount, decimals);
-      const appWallet = await contract.appWallet();
+      // For USDT/USDC (6 decimals), 1000 tokens = 1000000000
+      const amountInUnits = ethers.utils.parseUnits("1000000", decimals); // 1 million tokens
 
-      // Check if we need approval
-      const hasEnoughAllowance = await checkAllowance(formData.stablecoin, formData.amount);
+      // Check balance first
+      const balance = await token.balanceOf(wallet);
+      if (balance.lt(amountInUnits)) {
+        setError(`Insufficient balance. You need 1,000,000 ${formData.stablecoin === USDT_ADDRESS ? 'USDT' : 'USDC'}`);
+        return;
+      }
+
+      console.log('Approving tokens:', {
+        token: formData.stablecoin,
+        amount: amountInUnits.toString(),
+        appWallet,
+        decimals,
+        humanReadableAmount: ethers.utils.formatUnits(amountInUnits, decimals)
+      });
+
+      const approveTx = await token.approve(RENTPAY_CONTRACT_ADDRESS, amountInUnits);
+      console.log('Approval transaction sent:', approveTx.hash);
+      await approveTx.wait();
+      console.log('Approval transaction confirmed');
       
-      if (!hasEnoughAllowance) {
+      setStatus('✅ Approval successful! You can now make multiple payments up to 1,000,000 tokens.');
+      setAllowance(amountInUnits);
+    } catch (error) {
+      console.error('Approval Error:', error);
+      if (error.code === 'CALL_EXCEPTION') {
+        setError('Failed to interact with token contract. Please check if you are on the correct network.');
+      } else {
+        setError(error.message || 'Approval failed');
+      }
+      setStatus('❌ Approval failed');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (!provider) {
+      setError('Please connect your wallet first');
+      return;
+    }
+    setStatus('Processing...');
+    setIsPaying(true);
+    try {
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RentPayABI, signer);
+      const token = new ethers.Contract(formData.stablecoin, ERC20_ABI, signer);
+      const decimals = await token.decimals();
+      const amountInUnits = ethers.utils.parseUnits(formData.amount, decimals);
+      // Check current allowance
+      const currentAllowance = await token.allowance(wallet, RENTPAY_CONTRACT_ADDRESS);
+      if (currentAllowance.lt(amountInUnits)) {
         setStatus('Approving tokens...');
-        const approveTx = await token.approve(appWallet, amountInUnits);
+        const maxApprovalAmount = ethers.utils.parseUnits("1000000", decimals);
+        const approveTx = await token.approve(RENTPAY_CONTRACT_ADDRESS, maxApprovalAmount);
         await approveTx.wait();
         setStatus('Approval successful. Proceeding with payment...');
       }
-
       setStatus('Paying rent...');
       const tx = await contract.payRent(
         amountInUnits,
@@ -507,7 +475,6 @@ export default function Home() {
         formData.landlordBankDetails
       );
       await tx.wait();
-
       setStatus('✅ Rent paid successfully!');
       setFormData({
         amount: '',
@@ -516,10 +483,16 @@ export default function Home() {
         landlordBankDetails: '',
       });
       setAllowance(null);
+      setIsPaying(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3500);
     } catch (error) {
+      setIsPaying(false);
       console.error('RentPay Error:', error);
       if (error.code === 'CALL_EXCEPTION') {
         setError('Transaction failed. Please check if you are on the correct network and have sufficient balance.');
+      } else if (error.message.includes('transfer amount exceeds allowance')) {
+        setError('Insufficient token allowance. Please try the transaction again.');
       } else {
         setError(error.message || 'Transaction failed');
       }
@@ -529,6 +502,69 @@ export default function Home() {
 
   return (
     <Layout>
+      {/* Loader Modal */}
+      <AnimatePresence>
+        {isPaying && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="flex flex-col items-center justify-center p-8 bg-black/80 rounded-2xl shadow-2xl border border-white/10"
+            >
+              <svg className="animate-spin h-16 w-16 text-blue-400 mb-6" viewBox="0 0 50 50">
+                <circle className="opacity-20" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="5" fill="none" />
+                <circle className="opacity-80" cx="25" cy="25" r="20" stroke="#6366f1" strokeWidth="5" fill="none" strokeDasharray="100" strokeDashoffset="60" />
+              </svg>
+              <div className="text-lg text-white font-semibold mb-2">Processing Payment</div>
+              <div className="text-sm text-gray-300">Please confirm the transaction in your wallet.<br/>Do not close this window.</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="flex flex-col items-center justify-center p-8 bg-black/90 rounded-2xl shadow-2xl border border-white/10"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="mb-6"
+              >
+                <svg className="h-20 w-20 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#22c55e22" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12l2 2l4-4" />
+                </svg>
+              </motion.div>
+              <div className="text-2xl font-bold text-green-400 mb-2">Rent Paid Successfully!</div>
+              <div className="text-gray-200 text-center mb-4">Your rent payment was confirmed on-chain.<br/>Thank you for using RentPay.</div>
+              <button
+                onClick={() => setShowSuccess(false)}
+                className="mt-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="container mx-auto px-4 py-8">
         <header className="mb-12 text-center">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
@@ -652,21 +688,6 @@ export default function Home() {
                         className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
-
-                    {formData.amount && formData.stablecoin && (
-                      <div className="text-sm text-gray-400">
-                        {isCheckingAllowance ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            <span>Checking allowance...</span>
-                          </div>
-                        ) : allowance && tokenDecimals && (
-                          <div>
-                            Current allowance: {ethers.utils.formatUnits(allowance, tokenDecimals)} {formData.stablecoin === USDT_ADDRESS ? 'USDT' : 'USDC'}
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     <motion.button
                       whileHover={{ scale: 1.02 }}

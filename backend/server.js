@@ -19,7 +19,7 @@ app.use(cors({ origin: '*' })); // for dev only; restrict in prod
 const PORT = 3001;
 
 // Update contract address to match frontend
-const RENTPAY_CONTRACT_ADDRESS = '0xa89273fa3e346007582eff89db7fa41c80c3abb7';
+const RENTPAY_CONTRACT_ADDRESS = '0xdd2dBEe415c911F7a45a8bE3F7bdC1D23A05b0F3';
 
 // Load ABI file with error handling
 let RENTPAY_ABI;
@@ -36,7 +36,7 @@ try {
 
 // Infura setup
 const INFURA_API_KEY = 'f173f5c70e3f49bab6870c86a4264773';
-const provider = new ethers.providers.JsonRpcProvider(`https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`);
+const provider = new ethers.providers.JsonRpcProvider(`https://base-mainnet.infura.io/v3/${INFURA_API_KEY}`);
 
 // Contract instance
 const rentPayContract = new ethers.Contract(RENTPAY_CONTRACT_ADDRESS, RENTPAY_ABI, provider);

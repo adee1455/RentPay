@@ -213,11 +213,11 @@ export default function Analytics() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <div>
+              <div>
                   <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                    Analytics
-                  </h1>
-                  <p className="text-gray-400 mt-2">Track your payment performance</p>
+                  Analytics
+                </h1>
+                <p className="text-gray-400 mt-2">Track your payment performance</p>
                 </div>
               </div>
               <div className="text-gray-400 text-sm lg:text-base">
