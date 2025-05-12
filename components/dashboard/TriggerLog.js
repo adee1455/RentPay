@@ -23,7 +23,7 @@ export default function TriggerLog({ inrRate,events, onEventClick, selectedEvent
   };
 
   const openExplorer = (txHash) => {
-    window.open(`https://sepolia.basescan.org/tx/${txHash}`, '_blank');
+    window.open(`https://basescan.org/tx/${txHash}`, '_blank');
   };
 
    function convertToINR(usdtAmount, rate) {
